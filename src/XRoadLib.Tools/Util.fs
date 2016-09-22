@@ -27,13 +27,14 @@ module Seq =
 module Operators =
     let (</>) a b = Path.Combine(a, b)
 
-type XElement with
-    member this.HasAttribute(attributeName) =
-        this.Attribute(XName.Get(attributeName)) |> isNotNull
-
 [<AutoOpen>]
 module XElement =
-    let hasAttribute attributeName (element: XElement) = element.HasAttribute(attributeName)
+    let child name (element: XElement) = element.Element(name) |> Option.ofObj
+    let attribute attributeName (element: XElement) = element.Attribute(xn attributeName) |> Option.ofObj |> Option.map (fun x -> x.Value)
+    let hasAttribute attributeName (element: XElement) = element.Attribute(xn attributeName) |> isNotNull
+    let requiredAttribute attributeName (element: XElement) =
+        element.Attribute(xn attributeName) |> Option.ofObj |> Option.map (fun x -> x.Value)
+        |> Option.except (sprintf "Element `%A` is missing required attribute `%s`" element.Name attributeName)
 
 type XElementParser(element: XElement, ?ns) as this =
     let ns = defaultArg ns NamespaceConstants.XSD
