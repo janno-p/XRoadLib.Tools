@@ -64,3 +64,20 @@ let createObjExpr typeName =
 
 let addArguments (args: ExpressionSyntax list) (o: ObjectCreationExpressionSyntax) =
     o.AddArgumentListArguments(args |> List.map Sf.Argument |> List.toArray)
+
+let addBaseType name (cls: ClassDeclarationSyntax) =
+    cls.AddBaseListTypes(Sf.SimpleBaseType(parseTypeName name))
+
+let createCtor name =
+    let ctor = Sf.ConstructorDeclaration(name: string)
+    ctor.AddModifiers(token SyntaxKind.PublicKeyword)
+
+let addParameters (param: ParameterSyntax list) (ctor: ConstructorDeclarationSyntax) =
+    ctor.AddParameterListParameters(param |> List.toArray)
+
+let addBody body (ctor: ConstructorDeclarationSyntax) =
+    ctor.WithBody(body)
+
+let emptyBlock = Sf.Block()
+
+let toMember (x: #MemberDeclarationSyntax) = x :> MemberDeclarationSyntax

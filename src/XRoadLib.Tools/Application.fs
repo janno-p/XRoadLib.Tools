@@ -9,7 +9,8 @@ type GeneratorOptions =
       IsVerbose: bool
       IsCodeOutput: bool
       OutputPath: DirectoryInfo
-      MappingPath: FileInfo option }
+      MappingPath: FileInfo option
+      RootNamespace: string }
 
 let getInformationalVersion () =
     let assembly = typeof<GeneratorOptions>.GetTypeInfo().Assembly
@@ -30,8 +31,10 @@ let configureOptions (app: CommandLineApplication) =
     let optCode = app.Option("-c|--code", "Generate code", CommandOptionType.NoValue)
     let optOutput = app.Option("-o|--output", "Output path", CommandOptionType.SingleValue)
     let optMapping = app.Option("-m|--mapping", "Customization mappings for generated code", CommandOptionType.SingleValue)
+    let optNamespace = app.Option("-n|--namespace", "Root namespace of generated code", CommandOptionType.SingleValue)
     lazy({ WsdlUri = optSource.Value
            IsVerbose = optVerbose.HasValue()
            IsCodeOutput = optCode.HasValue()
            MappingPath = if optMapping.HasValue() then Some(FileInfo(optMapping.Value())) else None
-           OutputPath = DirectoryInfo(if optOutput.HasValue() then optOutput.Value() else "Output") })
+           OutputPath = DirectoryInfo(if optOutput.HasValue() then optOutput.Value() else "Output")
+           RootNamespace = if optNamespace.HasValue() then optNamespace.Value() else "MyNamespace" })

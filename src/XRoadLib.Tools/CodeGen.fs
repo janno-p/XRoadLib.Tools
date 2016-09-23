@@ -30,6 +30,23 @@ let loadSchema (options: GeneratorOptions) = async {
             return failwithf "Cannot resolve WSDL location: %s." options.WsdlUri
 }
 
+let genBinding (options: GeneratorOptions) (element: XElement) : SourceFile =
+    let name = element |> requiredAttribute "name"
+    let ifaceName = element |> requiredAttribute "type"
+    let ctor =
+        createCtor name
+        |> addParameters []
+        |> addBody emptyBlock
+        |> toMember
+    let services =
+        []
+    let bindingClass =
+        declareClass name
+        |> addBaseType (sprintf "I%s" ifaceName)
+        |> addClassMembers (ctor :: services)
+    SourceFile.New(FileInfo(options.OutputPath.FullName </> (sprintf "%s.cs" name)))
+    |> addNamespace options.RootNamespace [bindingClass]
+
 let genService (options: GeneratorOptions) (element: XElement) : SourceFile =
     let name = element |> requiredAttribute "name"
     let serviceClass =
@@ -46,7 +63,7 @@ let genService (options: GeneratorOptions) (element: XElement) : SourceFile =
                     | Some(producerName) -> i |> addArguments [stringLiteral producerName]
                 upcast (declareProperty propType propName initializer)))
     SourceFile.New(FileInfo(options.OutputPath.FullName </> (sprintf "%s.cs" name)))
-    |> addNamespace "MyNamespace" [serviceClass]
+    |> addNamespace options.RootNamespace [serviceClass]
 
 let genServiceCode (options: GeneratorOptions) (document: XDocument) =
     let definitions = document.Element(xnw "definitions") |> Object.except "Invalid WSDL document (definitions element is missing)."
@@ -63,10 +80,9 @@ let genServiceCode (options: GeneratorOptions) (document: XDocument) =
     //if definitions.Elements(xnw "types") |> Seq.isNotEmpty then notImplemented "wsdl:types"
     //if definitions.Elements(xnw "message") |> Seq.isNotEmpty then notImplemented "wsdl:message"
     //if definitions.Elements(xnw "portType") |> Seq.isNotEmpty then notImplemented "wsdl:portType"
-    //if definitions.Elements(xnw "binding") |> Seq.isNotEmpty then notImplemented "wsdl:binding"
-    //if definitions.Elements(xnw "service") |> Seq.isNotEmpty then notImplemented "wsdl:service"
 
+    let bindingUnits = definitions.Elements(xnw "binding") |> Seq.map (genBinding options) |> Seq.toList
     let serviceUnits = definitions.Elements(xnw "service") |> Seq.map (genService options) |> Seq.toList
 
-    (csAssemblyInfo :: serviceUnits)
+    csAssemblyInfo :: bindingUnits @ serviceUnits
     |> Seq.iter saveFile

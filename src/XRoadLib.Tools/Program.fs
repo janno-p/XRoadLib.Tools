@@ -15,6 +15,7 @@ let main args =
             async {
                 let options = optionsAccessor.Value
                 let! schemaDoc = loadSchema options
+                options.OutputPath.Delete(true)
                 genServiceCode options schemaDoc
                 return 0
             } |> Async.StartAsTask)
