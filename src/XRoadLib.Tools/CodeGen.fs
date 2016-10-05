@@ -2,6 +2,7 @@ module XRoadLib.Tools.CodeGen
 
 open Microsoft.Extensions.Logging
 open System
+open System.Collections.Generic
 open System.IO
 open System.Net.Http
 open System.Xml.Linq
@@ -12,6 +13,43 @@ open XRoadLib.Tools.Util
 
 type private Marker = class end
 let logger = Log.ofMarker<Marker>
+
+type SchemaLookup =
+    { Types: IDictionary<string, XElement>
+      Elements: IDictionary<string, XElement> }
+
+let buildSchemaLookup (definitions: XElement) =
+    let types = Dictionary<string, XElement>()
+    let elements = Dictionary<string, XElement>()
+    let parseSchema (schema: XElement) =
+        use p = new XElementParser(schema)
+        let tns = schema |> requiredAttribute "targetNamespace"
+        let addCollection (coll: IDictionary<_,_>) (e: XElement) = coll.Add((xns (e |> requiredAttribute "name") tns).ToString(), e)
+        let addTypes = addCollection types
+        let addElements = addCollection elements
+        let rec parseLeading () =
+            if (p.ParseElement("include") ||
+                p.ParseElement("import") ||
+                p.ParseElement("redefine") ||
+                p.ParseElement("annotation"))
+            then parseLeading()
+        let rec parseFollowing () =
+            if (p.ParseElement("simpleType", addTypes) ||
+                p.ParseElement("complexType", addTypes) ||
+                p.ParseElement("group") ||
+                p.ParseElement("attributeGroup") ||
+                p.ParseElement("element", addElements) ||
+                p.ParseElement("attribute") ||
+                p.ParseElement("notation") ||
+                p.ParseElement("annotation"))
+            then parseFollowing()
+        parseLeading()
+        parseFollowing()
+    definitions.Elements(xnw "types")
+    |> Seq.iter (fun wtypes ->
+        wtypes.Elements(xnd "schema")
+        |> Seq.iter parseSchema)
+    { Types = types; Elements = elements }
 
 let loadSchema (options: GeneratorOptions) = async {
     if options.WsdlUri |> String.IsNullOrEmpty then
@@ -77,6 +115,14 @@ let genServiceCode (options: GeneratorOptions) (document: XDocument) =
     |> Option.iter (fun documentation -> csAssemblyInfo <- csAssemblyInfo |> addAssemblyDescription documentation.Value)
 
     if definitions.Elements(xnw "import") |> Seq.isNotEmpty then notImplemented "wsdl:import"
+
+    let schemaLookup = buildSchemaLookup definitions
+
+    printfn "### types"
+    schemaLookup.Types |> Seq.iter (fun x -> printfn "%s" x.Key)
+    printfn "### elements"
+    schemaLookup.Elements |> Seq.iter (fun x -> printfn "%s" x.Key)
+
     //if definitions.Elements(xnw "types") |> Seq.isNotEmpty then notImplemented "wsdl:types"
     //if definitions.Elements(xnw "message") |> Seq.isNotEmpty then notImplemented "wsdl:message"
     //if definitions.Elements(xnw "portType") |> Seq.isNotEmpty then notImplemented "wsdl:portType"

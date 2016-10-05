@@ -8,6 +8,7 @@ open XRoadLib
 let xn nm = XName.Get(nm)
 let xns nm ns = XName.Get(nm, ns)
 let xnw nm = xns nm NamespaceConstants.WSDL
+let xnd nm = xns nm NamespaceConstants.XSD
 
 let notImplemented msg = failwithf "Not implemented: %s" msg
 
