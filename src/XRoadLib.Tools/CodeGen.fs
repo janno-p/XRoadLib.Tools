@@ -18,7 +18,7 @@ type SchemaLookup =
     { Types: IDictionary<string, XElement>
       Elements: IDictionary<string, XElement> }
 
-let buildSchemaLookup (definitions: XElement) =
+let buildSchemaLookup (options: GeneratorOptions) (definitions: XElement) =
     let types = Dictionary<string, XElement>()
     let elements = Dictionary<string, XElement>()
     let parseSchema (schema: XElement) =
@@ -116,14 +116,8 @@ let genServiceCode (options: GeneratorOptions) (document: XDocument) =
 
     if definitions.Elements(xnw "import") |> Seq.isNotEmpty then notImplemented "wsdl:import"
 
-    let schemaLookup = buildSchemaLookup definitions
+    let schemaLookup = definitions |> buildSchemaLookup options
 
-    printfn "### types"
-    schemaLookup.Types |> Seq.iter (fun x -> printfn "%s" x.Key)
-    printfn "### elements"
-    schemaLookup.Elements |> Seq.iter (fun x -> printfn "%s" x.Key)
-
-    //if definitions.Elements(xnw "types") |> Seq.isNotEmpty then notImplemented "wsdl:types"
     //if definitions.Elements(xnw "message") |> Seq.isNotEmpty then notImplemented "wsdl:message"
     //if definitions.Elements(xnw "portType") |> Seq.isNotEmpty then notImplemented "wsdl:portType"
 
