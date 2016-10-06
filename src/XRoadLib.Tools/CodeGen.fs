@@ -17,7 +17,8 @@ type SchemaLookup =
 let isSystemNamespace = function
     | NamespaceConstants.XMIME
     | NamespaceConstants.XROAD
-    | NamespaceConstants.XSD -> true
+    | NamespaceConstants.XSD
+    | NamespaceConstants.XROAD_V4 -> true
     | _ -> false
 
 let buildSchemaLookup (options: GeneratorOptions) (definitions: XElement) =
