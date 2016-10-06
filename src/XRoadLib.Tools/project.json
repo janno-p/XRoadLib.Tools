@@ -10,8 +10,8 @@
       "includeFiles": [
         "Util.fs",
         "Syntax.fs",
-        "Application.fs",
         "Log.fs",
+        "Application.fs",
         "CodeGen.fs",
         "Program.fs"
       ]

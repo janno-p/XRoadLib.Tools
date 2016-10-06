@@ -1,6 +1,5 @@
 module XRoadLib.Tools.CodeGen
 
-open Microsoft.Extensions.Logging
 open System
 open System.Collections.Generic
 open System.IO
@@ -10,26 +9,6 @@ open XRoadLib
 open XRoadLib.Tools.Application
 open XRoadLib.Tools.Syntax
 open XRoadLib.Tools.Util
-
-type private Marker = class end
-let logger = Log.ofMarker<Marker>
-
-let loadSchema (uri: string) = async {
-    if uri |> String.IsNullOrEmpty then
-        return failwith "Schema location url is required."
-    elif Uri.IsWellFormedUriString(uri, UriKind.Absolute) then
-        logger.LogInformation("Requesting schema from network location: {0}.", uri)
-        use client = new HttpClient()
-        use! stream = client.GetStreamAsync(uri) |> Async.AwaitTask
-        return XDocument.Load(stream)
-    else
-        let fileInfo = FileInfo(uri)
-        if fileInfo.Exists then
-            logger.LogInformation("Requesting schema from file: {0}.", fileInfo.FullName)
-            return XDocument.Load(fileInfo.FullName)
-        else
-            return failwithf "Cannot resolve schema location: %s." uri
-}
 
 type SchemaLookup =
     { Types: IDictionary<string, XElement>
