@@ -37,7 +37,7 @@ module XElement =
         element.Attribute(xn attributeName) |> Option.ofObj |> Option.map (fun x -> x.Value)
         |> Option.except (sprintf "Element `%A` is missing required attribute `%s`" element.Name attributeName)
 
-type XElementParser(element: XElement, ?ns) as this =
+type XElementParser(element: XElement, ?ns) =
     let ns = defaultArg ns NamespaceConstants.XSD
     let mutable isDone = true
     let enumerator = element.Elements().GetEnumerator()
@@ -55,5 +55,3 @@ type XElementParser(element: XElement, ?ns) as this =
         else false
     member __.ThrowIfNotDone() =
         if not isDone then enumerator.Current.Name.ToString() |> notImplemented
-    interface IDisposable with
-        member __.Dispose() = this.ThrowIfNotDone()

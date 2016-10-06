@@ -14,7 +14,7 @@ let main args =
         app.OnExecute(fun () ->
             async {
                 let options = optionsAccessor.Value
-                let! schemaDoc = loadSchema options
+                let! schemaDoc = loadSchema options.WsdlUri
                 if options.OutputPath.Exists then options.OutputPath.Delete(true)
                 genServiceCode options schemaDoc
                 return 0

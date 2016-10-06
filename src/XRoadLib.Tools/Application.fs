@@ -33,7 +33,7 @@ let loadSchema path =
     let fi = FileInfo(path)
     use s = fi.OpenRead()
     let doc = XDocument.Load(s)
-    let schema = doc.Root.Element(XName.Get("schema", NamespaceConstants.XSD))
+    let schema = doc.Element(XName.Get("schema", NamespaceConstants.XSD))
     (schema.Attribute(XName.Get("targetNamespace")).Value, schema)
 
 let configureOptions (app: CommandLineApplication) =
