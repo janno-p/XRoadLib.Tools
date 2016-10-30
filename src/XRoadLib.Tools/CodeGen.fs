@@ -64,6 +64,12 @@ let buildSchemaLookup (options: GeneratorOptions) (definitions: XElement) =
         |> Seq.iter parseSchema)
     { Types = types; Elements = elements }
 
+let genPortType (options: GeneratorOptions) (element: XElement) : SourceFile =
+    let name = element |> requiredAttribute "name" |> sprintf "I%s"
+    let portTypeInterface = declareInterface name
+    SourceFile.New(FileInfo(options.OutputPath.FullName </> (sprintf "%s.cs" name)))
+    |> addNamespace options.RootNamespace [portTypeInterface]
+
 let genBinding (options: GeneratorOptions) (element: XElement) : SourceFile =
     let name = element |> requiredAttribute "name"
     let ifaceName = element |> requiredAttribute "type"
@@ -90,11 +96,7 @@ let genService (options: GeneratorOptions) (element: XElement) : SourceFile =
             |> Seq.map (fun port ->
                 let propType = port |> requiredAttribute "binding"
                 let propName = port |> requiredAttribute "name"
-                let initializer =
-                    let i = createObjExpr propType
-                    match port |> child (xns "address" NamespaceConstants.XROAD) |> Option.bind (fun x -> x |> attribute "producer") with
-                    | None | Some("") -> i
-                    | Some(producerName) -> i |> addArguments [stringLiteral producerName]
+                let initializer = createObjExpr propType |> addArguments []
                 upcast (declareProperty propType propName initializer)))
     SourceFile.New(FileInfo(options.OutputPath.FullName </> (sprintf "%s.cs" name)))
     |> addNamespace options.RootNamespace [serviceClass]
@@ -115,10 +117,10 @@ let genServiceCode (options: GeneratorOptions) (document: XDocument) =
     let schemaLookup = definitions |> buildSchemaLookup options
 
     //if definitions.Elements(xnw "message") |> Seq.isNotEmpty then notImplemented "wsdl:message"
-    //if definitions.Elements(xnw "portType") |> Seq.isNotEmpty then notImplemented "wsdl:portType"
 
+    let portTypeUnits = definitions.Elements(xnw "portType") |> Seq.map (genPortType options) |> Seq.toList
     let bindingUnits = definitions.Elements(xnw "binding") |> Seq.map (genBinding options) |> Seq.toList
     let serviceUnits = definitions.Elements(xnw "service") |> Seq.map (genService options) |> Seq.toList
 
-    csAssemblyInfo :: bindingUnits @ serviceUnits
+    csAssemblyInfo :: portTypeUnits @ bindingUnits @ serviceUnits
     |> Seq.iter saveFile

@@ -1,4 +1,4 @@
-namespace GeneratedService.Output
+namespace MyNamespace
 {
     public class BindingName : IPortTypeName
     {

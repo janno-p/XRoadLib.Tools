@@ -50,6 +50,10 @@ let declareClass name =
     let cls = Sf.ClassDeclaration(name: string)
     cls.AddModifiers(token SyntaxKind.PublicKeyword)
 
+let declareInterface name =
+    let iface = Sf.InterfaceDeclaration(name: string)
+    iface.AddModifiers(token SyntaxKind.PublicKeyword)
+
 let declareProperty typeName (name: string) initializer =
     let prp = Sf.PropertyDeclaration(parseTypeName typeName, name)
     prp.AddModifiers(token SyntaxKind.PublicKeyword)
