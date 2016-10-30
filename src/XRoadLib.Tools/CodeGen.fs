@@ -10,9 +10,16 @@ open XRoadLib.Tools.Application
 open XRoadLib.Tools.Syntax
 open XRoadLib.Tools.Util
 
-type SchemaLookup =
-    { Types: IDictionary<string, XElement>
-      Elements: IDictionary<string, XElement> }
+type DefinitionLookup =
+    { Types: Map<string, XElement>
+      Elements: Map<string, XElement>
+      Messages: Map<string, XElement>
+      PortTypes: Map<string, XElement>
+      Operations: Map<string, XElement>
+      Bindings: Map<string, XElement>
+      OperationBindings: Map<string, XElement>
+      Services: Map<string, XElement>
+      Ports: Map<string, XElement> }
 
 let isSystemNamespace = function
     | NamespaceConstants.XMIME
@@ -21,9 +28,10 @@ let isSystemNamespace = function
     | NamespaceConstants.XROAD_V4 -> true
     | _ -> false
 
-let buildSchemaLookup (options: GeneratorOptions) (definitions: XElement) =
+let buildDefinitionLookup (options: GeneratorOptions) (definitions: XElement) =
     let types = Dictionary<string, XElement>()
     let elements = Dictionary<string, XElement>()
+    let deftns = definitions |> requiredAttribute "targetNamespace"
     let rec parseSchema (schema: XElement) =
         let p = new XElementParser(schema)
         let tns = schema |> requiredAttribute "targetNamespace"
@@ -62,7 +70,19 @@ let buildSchemaLookup (options: GeneratorOptions) (definitions: XElement) =
     |> Seq.iter (fun wtypes ->
         wtypes.Elements(xnd "schema")
         |> Seq.iter parseSchema)
-    { Types = types; Elements = elements }
+    let elemName (e: XElement) = (xns (e |> requiredAttribute "name") deftns).ToString()
+    let portTypes = definitions.Elements(xnw "portType") |> Seq.map (fun e -> elemName e, e) |> Map.ofSeq
+    let bindings = definitions.Elements(xnw "binding") |> Seq.map (fun e -> elemName e, e) |> Map.ofSeq
+    let services = definitions.Elements(xnw "service") |> Seq.map (fun e -> elemName e, e) |> Map.ofSeq
+    { Types = types |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
+      Elements = elements |> Seq.map (fun kvp -> kvp.Key, kvp.Value) |> Map.ofSeq
+      Messages = definitions.Elements(xnw "message") |> Seq.map (fun e -> elemName e, e) |> Map.ofSeq
+      PortTypes = portTypes
+      Operations = portTypes |> Seq.collect (fun kvp -> kvp.Value.Elements(xnw "operation")) |> Seq.map (fun e -> elemName e, e) |> Map.ofSeq
+      Bindings = bindings
+      OperationBindings = bindings |> Seq.collect (fun kvp -> kvp.Value.Elements(xnw "operation")) |> Seq.map (fun e -> elemName e, e) |> Map.ofSeq
+      Services = services
+      Ports = services |> Seq.collect (fun kvp -> kvp.Value.Elements(xnw "port")) |> Seq.map (fun e -> elemName e, e) |> Map.ofSeq }
 
 let genPortType (options: GeneratorOptions) (element: XElement) : SourceFile =
     let name = element |> requiredAttribute "name" |> sprintf "I%s"
@@ -114,7 +134,7 @@ let genServiceCode (options: GeneratorOptions) (document: XDocument) =
 
     if definitions.Elements(xnw "import") |> Seq.isNotEmpty then notImplemented "wsdl:import"
 
-    let schemaLookup = definitions |> buildSchemaLookup options
+    let schemaLookup = definitions |> buildDefinitionLookup options
 
     //if definitions.Elements(xnw "message") |> Seq.isNotEmpty then notImplemented "wsdl:message"
 
