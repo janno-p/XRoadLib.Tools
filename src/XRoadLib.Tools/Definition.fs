@@ -1,5 +1,11 @@
 module XRoadLib.Tools.Definition
 
+open System.Collections.Generic
+open System.Xml.Linq
+open XRoadLib
+open XRoadLib.Tools.Application
+open XRoadLib.Tools.Util
+
 type DefinitionLookup =
     { Types: Map<string, XElement>
       Elements: Map<string, XElement>
