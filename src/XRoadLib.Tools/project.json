@@ -12,6 +12,7 @@
         "Syntax.fs",
         "Log.fs",
         "Application.fs",
+        "Definition.fs",
         "CodeGen.fs",
         "Program.fs"
       ]
