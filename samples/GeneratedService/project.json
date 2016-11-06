@@ -8,7 +8,7 @@
     "Optional": "3.2.0"
   },
   "frameworks": {
-    "netcoreapp1.1": {
+    "netcoreapp1.0": {
       "dependencies": {
         "Microsoft.NETCore.App": {
           "type": "platform",
@@ -20,7 +20,7 @@
   },
   "tools": {
     "XRoadLib.Tools": {
-      "version": "1.0.0-*",
+      "version": "1.0.0",
       "imports": "portable-net45+win8+wp8+wpa81"
     }
   }
